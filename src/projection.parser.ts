@@ -104,8 +104,8 @@ export class ProjectionParser {
                 const value = filter[filterKey];
 
                 if (filterKey === field.name) {
-                    where[field.name] = where[field.name] || {};
-                    where[field.name]._eq = value;
+                    where[field.info.name] = where[field.info.name] || {};
+                    where[field.info.name]._eq = value;
                     continue;
                 }
 
@@ -115,8 +115,8 @@ export class ProjectionParser {
                 if (hasOperators) {
                     for (const operator of operators) {
                         if (filterKey === `${field.name}_${operator}`) {
-                            where[field.name] = where[field.name] || {};
-                            where[field.name][`_${operator}`] = value;
+                            where[field.info.name] = where[field.info.name] || {};
+                            where[field.info.name][`_${operator}`] = value;
                             break;
                         }
                     }
