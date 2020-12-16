@@ -1,6 +1,6 @@
 import { AdurcObject, AdurcDirectiveArgDefinition } from '@adurc/core/dist/interfaces/model';
 import { ProjectionInfoMeta, ProjectionInfo } from '@adurc/core/dist/interfaces/projection';
-import { SelectionNode, SelectionSetNode, FieldNode } from 'graphql';
+import { SelectionNode, SelectionSetNode, FieldNode, valueFromASTUntyped } from 'graphql';
 import { GraphQLArguments } from './arguments';
 import { RAModel } from './interfaces';
 
@@ -60,20 +60,38 @@ export class ProjectionParser {
     public static parseField(models: RAModel[], model: RAModel, fieldName: string, field: FieldNode, variables: Record<string, unknown>): ProjectionInfo {
         const args: Record<string, unknown> = {};
 
-        if (typeof variables.sortField === 'string' && typeof variables.sortOrder === 'string') {
-            args['order_by'] = { [variables.sortField]: variables.sortOrder === 'DESC' ? 'desc' : 'asc' };
+        let sortField: string;
+        let sortOrder: string;
+        let page: number;
+
+        for (const argument of field.arguments) {
+            const value = valueFromASTUntyped(argument.value, variables);
+
+            switch (argument.name.value) {
+                case 'sortField':
+                    sortField = value;
+                    break;
+                case 'sortOrder':
+                    sortOrder = value;
+                    break;
+                case 'perPage':
+                    args.limit = value;
+                    break;
+                case 'page':
+                    page = value;
+                    break;
+                case 'filter':
+                    args.where = this.parseFilter(models, model, value as Record<string, unknown>);
+                    break;
+            }
         }
 
-        if (typeof variables.perPage === 'number') {
-            args.limit = variables.perPage;
+        if (page && args.limit) {
+            args.offset = page * (args.limit as number);
         }
 
-        if (typeof variables.page === 'number' && typeof variables.perPage === 'number') {
-            args.offset = variables.page * variables.perPage;
-        }
-
-        if (variables.filter) {
-            args.where = this.parseFilter(models, model, variables.filter as Record<string, unknown>);
+        if (sortField && sortOrder) {
+            args['order_by'] = { [sortField]: sortOrder === 'DESC' ? 'desc' : 'asc' };
         }
 
         const output: ProjectionInfo = {
