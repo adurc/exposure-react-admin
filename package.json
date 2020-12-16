@@ -1,6 +1,6 @@
 {
   "name": "@adurc/exposure-react-admin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,6 +13,7 @@
     "build": "tsc",
     "lint": "eslint --fix src/**",
     "release": "standard-version",
+    "prepublish": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "test": "jest"
   },
