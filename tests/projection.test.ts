@@ -6,6 +6,7 @@ import { ProjectionParser } from '../src/projection.parser';
 import { ModelNonIdField } from './mocks/model-id-with-different-name';
 import { ModelMultiplePK } from './mocks/model-multiples-pk';
 import { ModelSimpleId } from './mocks/model-simple-id';
+import { ModelSimple } from './mocks/model-simple';
 
 
 describe('projection parser', () => {
@@ -63,7 +64,7 @@ describe('projection parser', () => {
 
         const fieldNode = (query.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode;
 
-        const projection = ProjectionParser.parseField([ModelSimpleId], ModelSimpleId, 'Fake', fieldNode, {});
+        const projection = ProjectionParser.parseFindAllField([ModelSimpleId], ModelSimpleId, 'Fake', fieldNode, {});
 
         expect(projection).toStrictEqual({
             type: 'expand',
@@ -73,6 +74,35 @@ describe('projection parser', () => {
             }, fields: [
                 { type: 'field', name: 'id' }
             ],
+        });
+    });
+
+    it('parse field create', () => {
+        const query = gql`
+        mutation test {
+            createFake(
+                name: "Fake"
+            ) {
+                id
+            }
+        }
+    `;
+
+        const fieldNode = (query.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode;
+
+        const projection = ProjectionParser.parseCreateField([ModelSimple], ModelSimple, fieldNode, {});
+
+        expect(projection).toStrictEqual({
+            type: 'expand',
+            name: 'fake',
+            args: {
+                objects: [{ name: 'Fake' }]
+            },
+            fields: [{
+                type: 'expand',
+                name: 'returning',
+                fields: [{ type: 'field', name: 'id' }],
+            }],
         });
     });
 });

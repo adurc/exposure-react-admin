@@ -165,7 +165,7 @@ export class ReactAdminExposure {
     private buildUpdateResolver(model: RAModel) {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            const projection = ProjectionParser.parseField(this.models, model, model.info.name, fieldNode, info.variableValues);
+            const projection = ProjectionParser.parseFindAllField(this.models, model, model.info.name, fieldNode, info.variableValues);
 
             const id = args.id;
             delete args.id;
@@ -195,13 +195,12 @@ export class ReactAdminExposure {
     }
 
 
-    private buildCreateResolver(_model: RAModel) {
-        return async (_source, _args, _context, _info) => {
-            // const fieldNode: FieldNode = info.fieldNodes[0];
-            // const projection = ProjectionParser.parseField(fieldNode, info.variableValues);
-            // projection.name = model.accessorName;
-            // const result = await this.dataServer.updateMany(projection);
-            // return this.processOutput(result);
+    private buildCreateResolver(model: RAModel) {
+        return async (_source, _args, _context, info) => {
+            const fieldNode: FieldNode = info.fieldNodes[0];
+            const projection = ProjectionParser.parseCreateField(this.models, model, fieldNode, info.variableValues);
+            const result = await this.adurc.createMany(projection);
+            return OutputTransform.transform(this.models, model, fieldNode, result.returning[0]);
         };
     }
 
@@ -238,7 +237,7 @@ export class ReactAdminExposure {
     private buildFindOneResolver(model: RAModel) {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            const projection = ProjectionParser.parseField(this.models, model, model.info.name, fieldNode, info.variableValues);
+            const projection = ProjectionParser.parseFindAllField(this.models, model, model.info.name, fieldNode, info.variableValues);
             projection.args = {
                 limit: 1,
                 where: { id: { _eq: args.id } }
@@ -255,7 +254,7 @@ export class ReactAdminExposure {
     private buildFindManyResolver(model: RAModel) {
         return async (_source, _args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            const projection = ProjectionParser.parseField(this.models, model, model.info.name, fieldNode, info.variableValues);
+            const projection = ProjectionParser.parseFindAllField(this.models, model, model.info.name, fieldNode, info.variableValues);
             console.log(`[EXPOSURE-RA] Projection generated: ${JSON.stringify(projection)}`);
             const result = await this.adurc.read(projection);
             const output = result.map(x => OutputTransform.transform(this.models, model, fieldNode, x));

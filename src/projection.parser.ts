@@ -28,7 +28,7 @@ export class ProjectionParser {
                 return { type: 'field', name: field.info.name };
             } else {
                 const relationModel = models.find(x => x.info.name === field.info.type);
-                return this.parseField(models, relationModel, field.info.name, selection, variables);
+                return this.parseFindAllField(models, relationModel, field.info.name, selection, variables);
             }
         } else {
             throw new Error(`Not implemented ${selection.kind}`);
@@ -57,7 +57,7 @@ export class ProjectionParser {
         return output;
     }
 
-    public static parseField(models: RAModel[], model: RAModel, fieldName: string, field: FieldNode, variables: Record<string, unknown>): ProjectionInfo {
+    public static parseFindAllField(models: RAModel[], model: RAModel, fieldName: string, field: FieldNode, variables: Record<string, unknown>): ProjectionInfo {
         const args: Record<string, unknown> = {};
 
         let sortField: string;
@@ -102,6 +102,33 @@ export class ProjectionParser {
         };
 
         return output;
+    }
+
+    public static parseCreateField(models: RAModel[], model: RAModel, field: FieldNode, variables: Record<string, unknown>): ProjectionInfo {
+        const object: Record<string, unknown> = {};
+
+        for (const argument of field.arguments) {
+            const value = valueFromASTUntyped(argument.value, variables);
+            const field = model.fields.find(x => x.name === argument.name.value);
+            object[field.info.name] = value;
+        }
+
+        const projection: ProjectionInfo = {
+            type: 'expand',
+            name: model.info.name,
+            args: {
+                objects: [object]
+            },
+            fields: [
+                {
+                    type: 'expand',
+                    name: 'returning',
+                    fields: this.parseSelectionSet(models, model, field.selectionSet, variables),
+                }
+            ],
+        };
+
+        return projection;
     }
 
     public static parseFilter(models: RAModel[], model: RAModel, filter: Record<string, unknown>): Record<string, unknown> {
