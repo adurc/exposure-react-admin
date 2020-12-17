@@ -68,10 +68,29 @@ export class ReactAdminExposure {
                 reactAdminModel.serializeId = (item) => {
                     return item[reactAdminModel.pkFields[0].info.name] as string | number;
                 };
+                reactAdminModel.deserializeId = (value: string | number) => {
+                    return { [reactAdminModel.pkFields[0].info.name]: value };
+                };
             } else if (reactAdminModel.pkFields.length > 1 && reactAdminModel.pkFields.findIndex(x => x.name === 'id') === -1) {
                 reactAdminModel.serializeId = (item) => {
                     const temp: string = reactAdminModel.pkFields.map(x => item[x.info.name].toString()).join('#');
                     return Buffer.from(temp).toString('base64');
+                };
+                reactAdminModel.deserializeId = (value: string | number) => {
+                    const data = Buffer.from(value as string, 'base64').toString('utf8').split('#');
+                    const output: Record<string, unknown> = {};
+                    for (let i = 0; i < reactAdminModel.pkFields.length; i++) {
+                        const pk = reactAdminModel.pkFields[i];
+                        switch (pk.info.type) {
+                            case 'int':
+                                output[pk.info.name] = parseInt(data[i]);
+                                break;
+                            default:
+                                output[pk.info.name] = data[i];
+                                break;
+                        }
+                    }
+                    return output;
                 };
             }
 
@@ -237,11 +256,8 @@ export class ReactAdminExposure {
         return async (_source, _args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
             const projection = ProjectionParser.parseField(this.models, model, model.info.name, fieldNode, info.variableValues);
-            console.log('projection', projection);
             const result = await this.adurc.read(projection);
-            console.log('result', result);
             const output = result.map(x => OutputTransform.transform(this.models, model, fieldNode, x));
-            console.log('output', output);
             return output;
         };
     }

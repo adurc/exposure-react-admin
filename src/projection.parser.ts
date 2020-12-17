@@ -108,41 +108,62 @@ export class ProjectionParser {
         const where: Record<string, Record<string, unknown>> = {};
         const operators = ['lt', 'lte', 'gt', 'gte'];
 
-        for (const field of model.fields) {
-            if (field.info.collection) {
-                continue;
-            }
+        for (const filterKey in filter) {
+            const value = filter[filterKey];
 
-            const modelType = models.find(x => x.info.name === field.info.type);
-            if (modelType) {
-                continue;
-            }
+            if (filterKey === 'ids') {
+                const filterPks: Record<string, unknown>[] = [];
 
-            for (const filterKey in filter) {
-                const value = filter[filterKey];
-
-                if (filterKey === field.name) {
-                    where[field.info.name] = where[field.info.name] || {};
-                    where[field.info.name]._eq = value;
-                    continue;
+                if (model.deserializeId) {
+                    (value as unknown[]).map(x => model.deserializeId(x as string | number))
+                        .forEach(x => filterPks.push(x));
+                } else if (model.pkFields.length === 1) {
+                    (value as unknown[])
+                        .forEach(x => filterPks.push({ id: x }));
                 }
 
-                const graphqlType = this.transformDataServerTypeIntoGraphQLType(field.info.type);
-                const hasOperators = graphqlType === 'Int';
+                for (const filterPk of filterPks) {
+                    for (const filterPkField in filterPk) {
+                        where[filterPkField] = where[filterPkField] || {};
+                        const array = (where[filterPkField]._in = where[filterPkField]._in || []) as unknown[];
+                        array.push(filterPk[filterPkField]);
+                    }
+                }
+                continue;
+            } else if (filterKey === 'id' && model.deserializeId) {
+                const filterPk = model.deserializeId(value as string | number);
+                for (const filterPkField in filterPk) {
+                    where[filterPkField] = where[filterPkField] || {};
+                    where[filterPkField]._eq = filterPk[filterPkField];
+                }
+                continue;
+            }
 
-                if (hasOperators) {
-                    for (const operator of operators) {
-                        if (filterKey === `${field.name}_${operator}`) {
-                            where[field.info.name] = where[field.info.name] || {};
-                            where[field.info.name][`_${operator}`] = value;
-                            break;
-                        }
+            const field = model.fields.find(x => x.name === filterKey);
+
+            if (!field) {
+                continue;
+            }
+
+            if (filterKey === field.name) {
+                where[field.info.name] = where[field.info.name] || {};
+                where[field.info.name]._eq = value;
+                continue;
+            }
+
+            const graphqlType = this.transformDataServerTypeIntoGraphQLType(field.info.type);
+            const hasOperators = graphqlType === 'Int';
+
+            if (hasOperators) {
+                for (const operator of operators) {
+                    if (filterKey === `${field.name}_${operator}`) {
+                        where[field.info.name] = where[field.info.name] || {};
+                        where[field.info.name][`_${operator}`] = value;
+                        break;
                     }
                 }
             }
-
         }
-
         return where;
     }
 

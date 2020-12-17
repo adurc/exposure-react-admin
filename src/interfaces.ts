@@ -1,6 +1,5 @@
 import { AdurcField, AdurcModel } from '@adurc/core/dist/interfaces/model';
 
-export type TFieldComputed = (item: Record<string, unknown>) => string | number;
 
 export interface RAField {
     name: string;
@@ -16,5 +15,6 @@ export interface RAModel {
     pluralTypeName: string;
     fields: RAField[];
     pkFields: RAField[];
-    serializeId?: TFieldComputed;
+    serializeId?: (item: Record<string, unknown>) => string | number;
+    deserializeId?: (value: string | number) => Record<string, unknown>;
 }
