@@ -1,4 +1,7 @@
+/* eslint-disable camelcase */
 
+import { gql } from 'apollo-server-express';
+import { FieldNode, OperationDefinitionNode } from 'graphql';
 import { ProjectionParser } from '../src/projection.parser';
 import { ModelNonIdField } from './mocks/model-id-with-different-name';
 import { ModelMultiplePK } from './mocks/model-multiples-pk';
@@ -46,6 +49,30 @@ describe('projection parser', () => {
         expect(where).toStrictEqual({
             fakeOneId: { _eq: 2 },
             fakeSecondId: { _eq: 4 },
+        });
+    });
+
+    it('sort by field', () => {
+        const query = gql`
+            query allFakes{
+                allFakes(sortField: "id", sortOrder: "ASC") {
+                    id
+                }
+            }
+        `;
+
+        const fieldNode = (query.definitions[0] as OperationDefinitionNode).selectionSet.selections[0] as FieldNode;
+
+        const projection = ProjectionParser.parseField([ModelSimpleId], ModelSimpleId, 'Fake', fieldNode, {});
+
+        expect(projection).toStrictEqual({
+            type: 'expand',
+            name: 'Fake',
+            args: {
+                order_by: { id: 'asc' }
+            }, fields: [
+                { type: 'field', name: 'id' }
+            ],
         });
     });
 });
