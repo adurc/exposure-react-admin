@@ -256,6 +256,7 @@ export class ReactAdminExposure {
         return async (_source, _args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
             const projection = ProjectionParser.parseField(this.models, model, model.info.name, fieldNode, info.variableValues);
+            console.log(`[EXPOSURE-RA] Projection generated: ${JSON.stringify(projection)}`);
             const result = await this.adurc.read(projection);
             const output = result.map(x => OutputTransform.transform(this.models, model, fieldNode, x));
             return output;
