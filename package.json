@@ -44,8 +44,9 @@
   },
   "dependencies": {
     "@adurc/core": "0.0.2",
-    "apollo-server-express": "^2.19.0",
+    "apollo-server-core": "^2.19.0",
     "graphql": "^15.4.0",
+    "graphql-tools": "^4.0.8",
     "pascalcase": "^1.0.0",
     "pluralize": "^8.0.0",
     "snake-case": "^3.0.4"

@@ -1,7 +1,8 @@
 import { Adurc } from '@adurc/core';
 import { ProjectionInfo } from '@adurc/core/dist/interfaces/projection';
-import { ApolloServer, IResolvers, ServerRegistration } from 'apollo-server-express';
+import { ApolloServerBase, Config } from 'apollo-server-core';
 import { DefinitionNode, DocumentNode, FieldDefinitionNode, FieldNode, InputValueDefinitionNode, ObjectTypeDefinitionNode, TypeNode } from 'graphql';
+import { IResolvers } from 'graphql-tools';
 import pascalcase from 'pascalcase';
 import pluralize from 'pluralize';
 import { snakeCase } from 'snake-case';
@@ -12,7 +13,7 @@ import { ProjectionParser } from './projection.parser';
 
 export class ReactAdminExposure {
 
-    private apolloServer: ApolloServer;
+    private apolloServer: ApolloServerBase;
     private models: RAModel[] = [];
 
     public get adurc(): Adurc {
@@ -23,15 +24,18 @@ export class ReactAdminExposure {
         private options: GraphQLExposureOptions,
     ) {
         this.buildReactAdminModels();
-        this.apolloServer = new ApolloServer({
-            playground: true,
+    }
+
+    public useApollo<T extends ApolloServerBase>(ApolloServer: { new(config: Config): T }, config?: Omit<Config, 'typeDefs' | 'resolvers'>): T {
+        const server = new ApolloServer({
+            ...config,
             typeDefs: this.buildDocument(),
             resolvers: this.buildResolvers(),
         });
-    }
 
-    public applyMiddleware(options: ServerRegistration): void {
-        this.apolloServer.applyMiddleware(options);
+        this.apolloServer = server;
+
+        return server;
     }
 
     private buildReactAdminModels() {
@@ -137,7 +141,7 @@ export class ReactAdminExposure {
         };
     }
 
-    private buildResolvers() {
+    private buildResolvers(): IResolvers {
         const resolvers: IResolvers = { Query: {}, Mutation: {} };
 
         for (const model of this.models) {
