@@ -1,3 +1,3 @@
-# ADURC
-
-![Node.js Package](https://github.com/adurc/exposure-react-admin/workflows/Node.js%20Package/badge.svg?branch=main)
+<p align="center">
+  <a href="http://adurc.io"><img src="https://raw.githubusercontent.com/adurc/resources/main/logo/logo.svg" alt="Adurc Logo" width="320" /></a>
+</p>
