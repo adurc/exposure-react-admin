@@ -96,6 +96,14 @@ export class ReactAdminResolverBuilder {
                 findManyArgs.select[field.info.name] = true;
             }
 
+            if ('filter' in args) {
+                findManyArgs.where = {};
+                for (const fieldName in args.filter) {
+                    const field = model.fields.find(x => x.name === fieldName);
+                    findManyArgs.where[field.info.name] = args.filter[fieldName];
+                }
+            }
+
             if ('page' in args && 'perPage' in args) {
                 findManyArgs.skip = (args.perPage as number) * (args.page as number);
                 findManyArgs.take = args.perPage as number;
