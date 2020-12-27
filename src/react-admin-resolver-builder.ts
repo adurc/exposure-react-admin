@@ -89,7 +89,7 @@ export class ReactAdminResolverBuilder {
             };
 
             for (const selection of fieldNode.selectionSet.selections) {
-                if (selection.kind !== 'Field') {
+                if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
