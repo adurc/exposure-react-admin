@@ -31,6 +31,7 @@
     "@babel/plugin-proposal-decorators": "^7.12.1",
     "@babel/preset-env": "^7.12.7",
     "@babel/preset-typescript": "^7.12.7",
+    "@types/camelcase": "^5.2.0",
     "@types/jest": "^26.0.16",
     "@types/pascalcase": "^1.0.0",
     "@types/pluralize": "0.0.29",
@@ -46,6 +47,8 @@
   "dependencies": {
     "@adurc/core": "^0.1.1",
     "apollo-server-core": "^2.19.0",
+    "apollo-server-types": "^0.6.2",
+    "camelcase": "^6.2.0",
     "graphql": "^15.4.0",
     "graphql-tools": "^4.0.8",
     "pascalcase": "^1.0.0",

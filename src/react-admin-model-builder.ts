@@ -3,6 +3,7 @@ import { RAField, RAModel } from './interfaces';
 import pascalcase from 'pascalcase';
 import { snakeCase } from 'snake-case';
 import pluralize from 'pluralize';
+import camelCase from 'camelcase';
 
 export class ReactAdminModelBuilder {
 
@@ -13,8 +14,9 @@ export class ReactAdminModelBuilder {
             const pascalName = pascalcase(model.name);
 
             const fields = model.fields.map<RAField>(c => {
-                const isComputed = c.directives.findIndex(x => x.name === 'computed') >= 0;
-                const isPk = c.directives.findIndex(x => x.name === 'pk') >= 0;
+                const directives = c.directives.filter(x => x.provider === 'ra');
+                const isComputed = directives.findIndex(x => x.name === 'computed') >= 0;
+                const isPk = directives.findIndex(x => x.name === 'pk') >= 0;
 
                 return {
                     info: c,
@@ -28,13 +30,14 @@ export class ReactAdminModelBuilder {
             const reactAdminModel: RAModel = {
                 info: model,
                 typeName: pascalName,
+                adurcClientFieldName: camelCase(model.name),
                 pluralTypeName: pluralize(pascalName),
                 pkFields: fields.filter(x => x.isPk),
                 fields,
             };
 
             if (reactAdminModel.pkFields.length === 0) {
-                console.warn(`Model ${model.name} can not be registered because not have a primary key directive`);
+                console.warn(`[exposure-react-admin] Model ${model.name} can not be registered because not have a primary key directive`);
                 continue;
             }
 

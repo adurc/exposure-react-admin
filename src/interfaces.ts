@@ -15,6 +15,7 @@ export interface RAModel {
     pluralTypeName: string;
     fields: RAField[];
     pkFields: RAField[];
+    adurcClientFieldName: string;
     serializeId?: (item: Record<string, unknown>) => string | number;
     deserializeId?: (value: string | number) => Record<string, unknown>;
 }
