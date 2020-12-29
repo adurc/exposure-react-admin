@@ -10,7 +10,7 @@ export class ReactAdminResolverBuilder {
         const resolvers: IResolvers = { Query: {}, Mutation: {} };
 
         for (const model of models) {
-            resolvers.Query[model.typeName] = this.buildFindOneResolver(model);
+            resolvers.Query[model.typeName] = this.buildFindOneResolver(adurc, model);
             resolvers.Query[`all${model.pluralTypeName}`] = this.buildFindManyResolver(adurc, model);
             resolvers.Query[`_all${model.pluralTypeName}Meta`] = this.buildFindMetaResolver(model);
             resolvers.Mutation[`create${model.typeName}`] = this.buildCreateResolver(model);
@@ -61,20 +61,42 @@ export class ReactAdminResolverBuilder {
         };
     }
 
-    private static buildFindOneResolver(_model: RAModel): IFieldResolver<unknown, unknown> {
-        return async (_source, _args, _context, _info) => {
-            // const fieldNode: FieldNode = info.fieldNodes[0];
-            // const projection = ProjectionParser.parseFindAllField(this.models, model, model.info.name, fieldNode, info.variableValues);
-            // projection.args = {
-            //     limit: 1,
-            //     where: { id: { _eq: args.id } }
-            // };
-            // const result = await this.adurc.read(projection);
-            // if (result.length === 0) {
-            //     return null;
-            // }
-            // const output = OutputTransform.transform(this.models, model, fieldNode, result[0]);
-            // return output;
+    private static buildFindOneResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
+        return async (_source, args, _context, info) => {
+            const fieldNode: FieldNode = info.fieldNodes[0];
+            console.log('[exposure-react-admin] find one: ' + JSON.stringify(fieldNode));
+            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+
+            const findManyArgs: AdurcFindManyArgs = {
+                select: {},
+            };
+
+            for (const selection of fieldNode.selectionSet.selections) {
+                if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                const field = model.fields.find(x => x.name === selection.name.value);
+                findManyArgs.select[field.info.name] = true;
+            }
+
+            const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
+
+            findManyArgs.where = { ...fieldsPk };
+
+            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(findManyArgs));
+
+            const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs);
+
+            if (result.length > 0) {
+                const raItem: Record<string, unknown> = {};
+                for (const adurcField in result[0]) {
+                    const field = model.fields.find(x => x.info.name === adurcField);
+                    raItem[field.name] = result[0][adurcField];
+                }
+                return raItem;
+            }
+
+            return null;
         };
     }
 
@@ -111,13 +133,13 @@ export class ReactAdminResolverBuilder {
 
             if ('sortField' in args && 'sortOrder' in args) {
                 const field = model.fields.find(x => x.name === args.sortField);
-                findManyArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'DESC' : 'ASC' };
+                findManyArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
             console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(findManyArgs));
 
             // TODO: pending fix adurc core types
-            const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs) as Record<string, unknown>[];
+            const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs);
 
             const output: Record<string, unknown>[] = [];
 
