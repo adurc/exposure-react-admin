@@ -212,12 +212,9 @@ export class GraphqlDocumentBuilder {
             name: { kind: 'Name', value: `delete${model.typeName}` },
             arguments: this.buildMutationArguments(model, { includePk: true, includeNonPk: false }),
             type: {
-                kind: 'NonNullType',
-                type: {
-                    kind: 'NamedType',
-                    name: { kind: 'Name', value: model.typeName },
-                }
-            }
+                kind: 'NamedType',
+                name: { kind: 'Name', value: model.typeName },
+            },
         };
     }
 

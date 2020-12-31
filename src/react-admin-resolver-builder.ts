@@ -3,6 +3,10 @@ import { RAModel } from './interfaces';
 import { Adurc } from '@adurc/core/dist/adurc';
 import { AdurcFindManyArgs } from '@adurc/core/dist/interfaces/client/find-many.args';
 import { FieldNode } from 'graphql';
+import { AdurcAggregateArgs } from '@adurc/core/dist/interfaces/client/aggregate.args';
+import { AdurcCreateArgs } from '@adurc/core/dist/interfaces/client/create.args';
+import { AdurcUpdateArgs } from '@adurc/core/dist/interfaces/client/update.args';
+import { AdurcDeleteArgs } from '@adurc/core/dist/interfaces/client/delete.args';
 
 export class ReactAdminResolverBuilder {
 
@@ -12,52 +16,181 @@ export class ReactAdminResolverBuilder {
         for (const model of models) {
             resolvers.Query[model.typeName] = this.buildFindOneResolver(adurc, model);
             resolvers.Query[`all${model.pluralTypeName}`] = this.buildFindManyResolver(adurc, model);
-            resolvers.Query[`_all${model.pluralTypeName}Meta`] = this.buildFindMetaResolver(model);
-            resolvers.Mutation[`create${model.typeName}`] = this.buildCreateResolver(model);
-            resolvers.Mutation[`update${model.typeName}`] = this.buildUpdateResolver(adurc, models, model);
-            resolvers.Mutation[`delete${model.typeName}`] = this.buildDeleteResolver(model);
+            resolvers.Query[`_all${model.pluralTypeName}Meta`] = this.buildFindMetaResolver(adurc, model);
+            resolvers.Mutation[`create${model.typeName}`] = this.buildCreateResolver(adurc, model);
+            resolvers.Mutation[`update${model.typeName}`] = this.buildUpdateResolver(adurc, model);
+            resolvers.Mutation[`delete${model.typeName}`] = this.buildDeleteResolver(adurc, model);
         }
 
         return resolvers;
     }
 
-    private static buildDeleteResolver(_model: RAModel): IFieldResolver<unknown, unknown> {
-        return async (_source, _args, _context, _info) => {
-            // const fieldNode: FieldNode = info.fieldNodes[0];
-            // const projection = ProjectionParser.parseField(fieldNode, info.variableValues);
-            // projection.name = model.accessorName;
-            // const result = await this.dataServer.updateMany(projection);
-            // return this.processOutput(result);
+    private static buildDeleteResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
+        return async (_source, args, _context, info) => {
+            const fieldNode: FieldNode = info.fieldNodes[0];
+            console.log('[exposure-react-admin] delete: ' + JSON.stringify(fieldNode));
+            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+
+            const item: Record<string, unknown> = {};
+            const deleteArgs: AdurcDeleteArgs = {
+                select: {},
+            };
+
+            const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
+            deleteArgs.where = { ...fieldsPk };
+
+            for (const arg in args) {
+                const field = model.fields.find(x => x.name === arg);
+                item[field.info.name] = args[arg];
+            }
+
+            for (const selection of fieldNode.selectionSet.selections) {
+                if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                const field = model.fields.find(x => x.name === selection.name.value);
+                deleteArgs.select[field.info.name] = true;
+            }
+
+            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(deleteArgs));
+
+            const result = await adurc.client[model.adurcClientFieldName].deleteMany(deleteArgs);
+
+            if (result.returning.length > 0) {
+                const raItem: Record<string, unknown> = {};
+                for (const adurcField in result.returning[0]) {
+                    const field = model.fields.find(x => x.info.name === adurcField);
+                    raItem[field.name] = result.returning[0][adurcField];
+                }
+                return raItem;
+            }
+
+            return null;
         };
     }
 
-    private static buildUpdateResolver(_adurc: Adurc, _models: RAModel[], _model: RAModel): IFieldResolver<unknown, unknown> {
-        return async (_source, _args, _context, _info) => {
-            // const fieldNode: FieldNode = info.fieldNodes[0];
-            // const projection = ProjectionParser.parseField(fieldNode, info.variableValues);
-            // projection.name = model.accessorName;
-            // const result = await this.dataServer.updateMany(projection);
-            // return this.processOutput(result);
+    private static buildUpdateResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
+        return async (_source, args, _context, info) => {
+            const fieldNode: FieldNode = info.fieldNodes[0];
+            console.log('[exposure-react-admin] update: ' + JSON.stringify(fieldNode));
+            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+
+            const item: Record<string, unknown> = {};
+            const updateArgs: AdurcUpdateArgs = {
+                set: item,
+                select: {},
+            };
+
+            const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
+            updateArgs.where = { ...fieldsPk };
+
+            for (const arg in args) {
+                const field = model.fields.find(x => x.name === arg);
+                item[field.info.name] = args[arg];
+            }
+
+            for (const selection of fieldNode.selectionSet.selections) {
+                if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                const field = model.fields.find(x => x.name === selection.name.value);
+                updateArgs.select[field.info.name] = true;
+            }
+
+            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(updateArgs));
+
+            const result = await adurc.client[model.adurcClientFieldName].updateMany(updateArgs);
+
+            if (result.returning.length > 0) {
+                const raItem: Record<string, unknown> = {};
+                for (const adurcField in result.returning[0]) {
+                    const field = model.fields.find(x => x.info.name === adurcField);
+                    raItem[field.name] = result.returning[0][adurcField];
+                }
+                return raItem;
+            }
+
+            return null;
         };
     }
 
-    private static buildCreateResolver(_model: RAModel): IFieldResolver<unknown, unknown> {
-        return async (_source, _args, _context, _info) => {
-            // const fieldNode: FieldNode = info.fieldNodes[0];
-            // const projection = ProjectionParser.parseField(fieldNode, info.variableValues);
-            // projection.name = model.accessorName;
-            // const result = await this.dataServer.updateMany(projection);
-            // return this.processOutput(result);
+    private static buildCreateResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
+        return async (_source, args, _context, info) => {
+            const fieldNode: FieldNode = info.fieldNodes[0];
+            console.log('[exposure-react-admin] create: ' + JSON.stringify(fieldNode));
+            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+
+            const item: Record<string, unknown> = {};
+            const createArgs: AdurcCreateArgs = {
+                data: [item],
+                select: {},
+            };
+
+            for (const arg in args) {
+                const field = model.fields.find(x => x.name === arg);
+                item[field.info.name] = args[arg];
+            }
+
+            for (const selection of fieldNode.selectionSet.selections) {
+                if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                const field = model.fields.find(x => x.name === selection.name.value);
+                createArgs.select[field.info.name] = true;
+            }
+
+            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(createArgs));
+
+            const result = await adurc.client[model.adurcClientFieldName].createMany(createArgs);
+
+            if (result.returning.length > 0) {
+                const raItem: Record<string, unknown> = {};
+                for (const adurcField in result.returning[0]) {
+                    const field = model.fields.find(x => x.info.name === adurcField);
+                    raItem[field.name] = result.returning[0][adurcField];
+                }
+                return raItem;
+            }
+
+            return null;
         };
     }
 
-    private static buildFindMetaResolver(_model: RAModel): IFieldResolver<unknown, unknown> {
-        return async (_source, _args) => {
-            // const fieldNode: FieldNode = info.fieldNodes[0];
-            // const projection = ProjectionParser.parseField(fieldNode, info.variableValues);
-            // projection.name = model.accessorName;
-            // const result = await this.dataServer.updateMany(projection);
-            // return this.processOutput(result);
+    private static buildFindMetaResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
+        return async (_source, args, _context, info) => {
+            const fieldNode: FieldNode = info.fieldNodes[0];
+            console.log('[exposure-react-admin] meta (aggregate): ' + JSON.stringify(fieldNode));
+            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+
+            const aggregateArgs: AdurcAggregateArgs = {
+                count: true
+            };
+
+            if ('filter' in args) {
+                aggregateArgs.where = {};
+                for (const fieldName in args.filter) {
+                    const field = model.fields.find(x => x.name === fieldName);
+                    aggregateArgs.where[field.info.name] = args.filter[fieldName];
+                }
+            }
+
+            if ('page' in args && 'perPage' in args) {
+                aggregateArgs.skip = (args.perPage as number) * (args.page as number);
+                aggregateArgs.take = args.perPage as number;
+            }
+
+            if ('sortField' in args && 'sortOrder' in args) {
+                const field = model.fields.find(x => x.name === args.sortField);
+                aggregateArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+            }
+
+            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(aggregateArgs));
+
+            const result = await adurc.client[model.adurcClientFieldName].aggregate(aggregateArgs);
+
+            console.log('[exposure-react-admin] result: ' + JSON.stringify(result));
+
+            return result;
         };
     }
 
