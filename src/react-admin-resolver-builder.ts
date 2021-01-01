@@ -7,6 +7,8 @@ import { AdurcAggregateArgs } from '@adurc/core/dist/interfaces/client/aggregate
 import { AdurcCreateArgs } from '@adurc/core/dist/interfaces/client/create.args';
 import { AdurcUpdateArgs } from '@adurc/core/dist/interfaces/client/update.args';
 import { AdurcDeleteArgs } from '@adurc/core/dist/interfaces/client/delete.args';
+import { AdurcModelWhere } from '@adurc/core/dist/interfaces/client/where';
+import { AdurcModelUntyped } from '@adurc/core/dist/interfaces/client/model';
 
 export class ReactAdminResolverBuilder {
 
@@ -156,6 +158,29 @@ export class ReactAdminResolverBuilder {
         };
     }
 
+    private static buildFilter(model: RAModel, filter: Record<string, unknown>, where: AdurcModelWhere<AdurcModelUntyped>): void {
+        for (const fieldName in filter) {
+            const value = filter[fieldName];
+            if (fieldName === 'ids') {
+                if (!(value instanceof Array)) throw new Error('Expected array on filter type ids');
+                if (model.deserializeId) {
+                    where.AND = [];
+                    for (const v of value) {
+                        const pksValue = model.deserializeId(v);
+                        where.AND.push(pksValue);
+                    }
+                } else {
+                    where['id'] = {
+                        in: value
+                    };
+                }
+                continue;
+            }
+            const field = model.fields.find(x => x.name === fieldName);
+            where[field.info.name] = value;
+        }
+    }
+
     private static buildFindMetaResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
@@ -168,10 +193,7 @@ export class ReactAdminResolverBuilder {
 
             if ('filter' in args) {
                 aggregateArgs.where = {};
-                for (const fieldName in args.filter) {
-                    const field = model.fields.find(x => x.name === fieldName);
-                    aggregateArgs.where[field.info.name] = args.filter[fieldName];
-                }
+                this.buildFilter(model, args.filter, aggregateArgs.where);
             }
 
             if ('page' in args && 'perPage' in args) {
@@ -253,10 +275,7 @@ export class ReactAdminResolverBuilder {
 
             if ('filter' in args) {
                 findManyArgs.where = {};
-                for (const fieldName in args.filter) {
-                    const field = model.fields.find(x => x.name === fieldName);
-                    findManyArgs.where[field.info.name] = args.filter[fieldName];
-                }
+                this.buildFilter(model, args.filter, findManyArgs.where);
             }
 
             if ('page' in args && 'perPage' in args) {

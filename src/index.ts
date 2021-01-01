@@ -21,6 +21,12 @@ export class ReactAdminExposure {
 
             context.directives.push({
                 provider: 'ra',
+                name: 'has_default',
+                composition: 'field',
+            });
+
+            context.directives.push({
+                provider: 'ra',
                 name: 'computed',
                 composition: 'field',
             });

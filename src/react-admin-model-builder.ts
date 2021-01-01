@@ -15,12 +15,12 @@ export class ReactAdminModelBuilder {
 
             const fields = model.fields.map<RAField>(c => {
                 const directives = c.directives.filter(x => x.provider === 'ra');
-                const isComputed = directives.findIndex(x => x.name === 'computed') >= 0;
+                const hasDefault = directives.findIndex(x => x.name === 'has_default') >= 0;
                 const isPk = directives.findIndex(x => x.name === 'pk') >= 0;
 
                 return {
                     info: c,
-                    isComputed,
+                    hasDefault,
                     isPk,
                     name: snakeCase(c.name),
                     manyFieldName: c.collection ? pascalcase(pluralize(c.name)) : undefined,

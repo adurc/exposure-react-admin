@@ -156,7 +156,7 @@ export class GraphqlDocumentBuilder {
                 name: { kind: 'Name', value: this.transformDataServerTypeIntoGraphQLType(field.info.type as string) }
             };
 
-            if (field.info.nonNull) {
+            if (field.info.nonNull && !field.hasDefault) {
                 fieldType = {
                     kind: 'NonNullType',
                     type: fieldType,

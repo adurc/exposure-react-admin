@@ -5,7 +5,7 @@ export interface RAField {
     name: string;
     info: AdurcField;
     manyFieldName?: string;
-    isComputed: boolean;
+    hasDefault: boolean;
     isPk: boolean;
 }
 
