@@ -42,8 +42,6 @@ export class ReactAdminExposure {
 
             const models = ReactAdminModelBuilder.build(context.logger, context.models);
 
-            context.logger.debug('[exposure-react-admin] models: ', JSON.stringify(models));
-
             const server = new ApolloServer({
                 ...config,
                 typeDefs: GraphqlDocumentBuilder.build(models),
