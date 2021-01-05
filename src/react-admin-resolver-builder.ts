@@ -9,8 +9,11 @@ import { AdurcUpdateArgs } from '@adurc/core/dist/interfaces/client/update.args'
 import { AdurcDeleteArgs } from '@adurc/core/dist/interfaces/client/delete.args';
 import { AdurcModelWhere } from '@adurc/core/dist/interfaces/client/where';
 import { AdurcModelUntyped } from '@adurc/core/dist/interfaces/client/model';
+import { IAdurcLogger } from '@adurc/core/dist/interfaces/logger';
 
 export class ReactAdminResolverBuilder {
+
+    static logger: IAdurcLogger;
 
     static build(adurc: Adurc, models: RAModel[]): IResolvers {
         const resolvers: IResolvers = { Query: {}, Mutation: {} };
@@ -30,12 +33,13 @@ export class ReactAdminResolverBuilder {
     private static buildDeleteResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            console.log('[exposure-react-admin] delete: ' + JSON.stringify(fieldNode));
-            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+            this.logger.debug('[exposure-react-admin] delete: ' + JSON.stringify(fieldNode));
+            this.logger.debug('[exposure-react-admin] arguments: ' + JSON.stringify(args));
 
             const item: Record<string, unknown> = {};
             const deleteArgs: AdurcDeleteArgs = {
                 select: {},
+                where: {},
             };
 
             const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
@@ -54,7 +58,7 @@ export class ReactAdminResolverBuilder {
                 deleteArgs.select[field.info.name] = true;
             }
 
-            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(deleteArgs));
+            this.logger.debug('[exposure-react-admin] adurc args: ' + JSON.stringify(deleteArgs));
 
             const result = await adurc.client[model.adurcClientFieldName].deleteMany(deleteArgs);
 
@@ -74,13 +78,14 @@ export class ReactAdminResolverBuilder {
     private static buildUpdateResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            console.log('[exposure-react-admin] update: ' + JSON.stringify(fieldNode));
-            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+            this.logger.debug('[exposure-react-admin] update: ' + JSON.stringify(fieldNode));
+            this.logger.debug('[exposure-react-admin] arguments: ' + JSON.stringify(args));
 
             const item: Record<string, unknown> = {};
             const updateArgs: AdurcUpdateArgs = {
                 set: item,
                 select: {},
+                where: {},
             };
 
             const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
@@ -99,7 +104,7 @@ export class ReactAdminResolverBuilder {
                 updateArgs.select[field.info.name] = true;
             }
 
-            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(updateArgs));
+            this.logger.debug('[exposure-react-admin] adurc args: ' + JSON.stringify(updateArgs));
 
             const result = await adurc.client[model.adurcClientFieldName].updateMany(updateArgs);
 
@@ -119,8 +124,8 @@ export class ReactAdminResolverBuilder {
     private static buildCreateResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            console.log('[exposure-react-admin] create: ' + JSON.stringify(fieldNode));
-            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+            this.logger.debug('[exposure-react-admin] create: ' + JSON.stringify(fieldNode));
+            this.logger.debug('[exposure-react-admin] arguments: ' + JSON.stringify(args));
 
             const item: Record<string, unknown> = {};
             const createArgs: AdurcCreateArgs = {
@@ -141,7 +146,7 @@ export class ReactAdminResolverBuilder {
                 createArgs.select[field.info.name] = true;
             }
 
-            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(createArgs));
+            this.logger.debug('[exposure-react-admin] adurc args: ' + JSON.stringify(createArgs));
 
             const result = await adurc.client[model.adurcClientFieldName].createMany(createArgs);
 
@@ -184,8 +189,8 @@ export class ReactAdminResolverBuilder {
     private static buildFindMetaResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            console.log('[exposure-react-admin] meta (aggregate): ' + JSON.stringify(fieldNode));
-            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+            this.logger.debug('[exposure-react-admin] meta (aggregate): ' + JSON.stringify(fieldNode));
+            this.logger.debug('[exposure-react-admin] arguments: ' + JSON.stringify(args));
 
             const aggregateArgs: AdurcAggregateArgs = {
                 count: true
@@ -206,11 +211,11 @@ export class ReactAdminResolverBuilder {
                 aggregateArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(aggregateArgs));
+            this.logger.debug('[exposure-react-admin] adurc args: ' + JSON.stringify(aggregateArgs));
 
             const result = await adurc.client[model.adurcClientFieldName].aggregate(aggregateArgs);
 
-            console.log('[exposure-react-admin] result: ' + JSON.stringify(result));
+            this.logger.debug('[exposure-react-admin] result: ' + JSON.stringify(result));
 
             return result;
         };
@@ -219,8 +224,8 @@ export class ReactAdminResolverBuilder {
     private static buildFindOneResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            console.log('[exposure-react-admin] find one: ' + JSON.stringify(fieldNode));
-            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+            this.logger.debug('[exposure-react-admin] find one: ' + JSON.stringify(fieldNode));
+            this.logger.debug('[exposure-react-admin] arguments: ' + JSON.stringify(args));
 
             const findManyArgs: AdurcFindManyArgs = {
                 select: {},
@@ -238,7 +243,7 @@ export class ReactAdminResolverBuilder {
 
             findManyArgs.where = { ...fieldsPk };
 
-            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(findManyArgs));
+            this.logger.debug('[exposure-react-admin] adurc args: ' + JSON.stringify(findManyArgs));
 
             const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs);
 
@@ -258,8 +263,8 @@ export class ReactAdminResolverBuilder {
     private static buildFindManyResolver(adurc: Adurc, model: RAModel): IFieldResolver<unknown, unknown> {
         return async (_source, args, _context, info) => {
             const fieldNode: FieldNode = info.fieldNodes[0];
-            console.log('[exposure-react-admin] find many: ' + JSON.stringify(fieldNode));
-            console.log('[exposure-react-admin] arguments: ' + JSON.stringify(args));
+            this.logger.debug('[exposure-react-admin] find many: ' + JSON.stringify(fieldNode));
+            this.logger.debug('[exposure-react-admin] arguments: ' + JSON.stringify(args));
 
             const findManyArgs: AdurcFindManyArgs = {
                 select: {},
@@ -288,7 +293,7 @@ export class ReactAdminResolverBuilder {
                 findManyArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            console.log('[exposure-react-admin] adurc args: ' + JSON.stringify(findManyArgs));
+            this.logger.debug('[exposure-react-admin] adurc args: ' + JSON.stringify(findManyArgs));
 
             // TODO: pending fix adurc core types
             const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs);

@@ -13,6 +13,8 @@ export class ReactAdminExposure {
     ): BuilderGeneratorFunction {
 
         return async function* SourceGenerator(context) {
+            ReactAdminResolverBuilder.logger = context.logger;
+
             context.directives.push({
                 provider: 'ra',
                 name: 'pk',
@@ -38,9 +40,9 @@ export class ReactAdminExposure {
                 throw new Error('[exposure-react-admin] expected adurc at context in stage OnAfterInit');
             }
 
-            const models = ReactAdminModelBuilder.build(context.models);
+            const models = ReactAdminModelBuilder.build(context.logger, context.models);
 
-            console.log('[exposure-react-admin] models: ', JSON.stringify(models));
+            context.logger.debug('[exposure-react-admin] models: ', JSON.stringify(models));
 
             const server = new ApolloServer({
                 ...config,

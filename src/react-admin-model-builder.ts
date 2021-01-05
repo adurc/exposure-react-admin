@@ -4,10 +4,11 @@ import pascalcase from 'pascalcase';
 import { snakeCase } from 'snake-case';
 import pluralize from 'pluralize';
 import camelCase from 'camelcase';
+import { IAdurcLogger } from '@adurc/core/dist/interfaces/logger';
 
 export class ReactAdminModelBuilder {
 
-    public static build(models: AdurcModel[]): RAModel[] {
+    public static build(logger: IAdurcLogger, models: AdurcModel[]): RAModel[] {
         const output: RAModel[] = [];
 
         for (const model of models) {
@@ -37,7 +38,7 @@ export class ReactAdminModelBuilder {
             };
 
             if (reactAdminModel.pkFields.length === 0) {
-                console.warn(`[exposure-react-admin] Model ${model.name} can not be registered because not have a primary key directive`);
+                logger.warn(`[exposure-react-admin] Model ${model.name} can not be registered because not have a primary key directive`);
                 continue;
             }
 
