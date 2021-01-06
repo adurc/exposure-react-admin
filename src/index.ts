@@ -15,19 +15,19 @@ export class ReactAdminExposure {
         return async function* SourceGenerator(context) {
             ReactAdminResolverBuilder.logger = context.logger;
 
-            context.directives.push({
+            context.addDirective({
                 provider: 'ra',
                 name: 'pk',
                 composition: 'field',
             });
 
-            context.directives.push({
+            context.addDirective({
                 provider: 'ra',
                 name: 'has_default',
                 composition: 'field',
             });
 
-            context.directives.push({
+            context.addDirective({
                 provider: 'ra',
                 name: 'computed',
                 composition: 'field',

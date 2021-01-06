@@ -1,6 +1,5 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { RAModel } from './interfaces';
-import { Adurc } from '@adurc/core/dist/adurc';
 import { AdurcFindManyArgs } from '@adurc/core/dist/interfaces/client/find-many.args';
 import { FieldNode } from 'graphql';
 import { AdurcAggregateArgs } from '@adurc/core/dist/interfaces/client/aggregate.args';
@@ -9,6 +8,7 @@ import { AdurcUpdateArgs } from '@adurc/core/dist/interfaces/client/update.args'
 import { AdurcDeleteArgs } from '@adurc/core/dist/interfaces/client/delete.args';
 import { AdurcModelWhere } from '@adurc/core/dist/interfaces/client/where';
 import { AdurcModelUntyped } from '@adurc/core/dist/interfaces/client/model';
+import { Adurc } from '@adurc/core';
 import { IAdurcLogger } from '@adurc/core/dist/interfaces/logger';
 
 export class ReactAdminResolverBuilder {
@@ -57,7 +57,7 @@ export class ReactAdminResolverBuilder {
                 deleteArgs.select[field.info.name] = true;
             }
 
-            const result = await adurc.client[model.adurcClientFieldName].deleteMany(deleteArgs);
+            const result = await adurc[model.adurcClientFieldName].deleteMany(deleteArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -100,7 +100,7 @@ export class ReactAdminResolverBuilder {
                 updateArgs.select[field.info.name] = true;
             }
 
-            const result = await adurc.client[model.adurcClientFieldName].updateMany(updateArgs);
+            const result = await adurc[model.adurcClientFieldName].updateMany(updateArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -139,7 +139,7 @@ export class ReactAdminResolverBuilder {
                 createArgs.select[field.info.name] = true;
             }
 
-            const result = await adurc.client[model.adurcClientFieldName].createMany(createArgs);
+            const result = await adurc[model.adurcClientFieldName].createMany(createArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -201,7 +201,7 @@ export class ReactAdminResolverBuilder {
                 aggregateArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            const result = await adurc.client[model.adurcClientFieldName].aggregate(aggregateArgs);
+            const result = await adurc[model.adurcClientFieldName].aggregate(aggregateArgs);
 
             return result;
         };
@@ -228,7 +228,7 @@ export class ReactAdminResolverBuilder {
 
             findManyArgs.where = { ...fieldsPk };
 
-            const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs);
+            const result = await adurc[model.adurcClientFieldName].findMany(findManyArgs);
 
             if (result.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -275,8 +275,7 @@ export class ReactAdminResolverBuilder {
                 findManyArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            // TODO: pending fix adurc core types
-            const result = await adurc.client[model.adurcClientFieldName].findMany(findManyArgs);
+            const result = await adurc[model.adurcClientFieldName].findMany(findManyArgs);
 
             const output: Record<string, unknown>[] = [];
 

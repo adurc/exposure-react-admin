@@ -8,7 +8,7 @@ import { IAdurcLogger } from '@adurc/core/dist/interfaces/logger';
 
 export class ReactAdminModelBuilder {
 
-    public static build(logger: IAdurcLogger, models: AdurcModel[]): RAModel[] {
+    public static build(logger: IAdurcLogger, models: ReadonlyArray<AdurcModel>): RAModel[] {
         const output: RAModel[] = [];
 
         for (const model of models) {
