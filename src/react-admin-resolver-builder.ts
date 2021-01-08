@@ -46,7 +46,7 @@ export class ReactAdminResolverBuilder {
 
             for (const arg in args) {
                 const field = model.fields.find(x => x.name === arg);
-                item[field.info.name] = args[arg];
+                item[field.info.accessorName] = args[arg];
             }
 
             for (const selection of fieldNode.selectionSet.selections) {
@@ -54,15 +54,15 @@ export class ReactAdminResolverBuilder {
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
-                deleteArgs.select[field.info.name] = true;
+                deleteArgs.select[field.info.accessorName] = true;
             }
 
-            const result = await adurc[model.adurcClientFieldName].deleteMany(deleteArgs);
+            const result = await adurc[model.info.accessorName].deleteMany(deleteArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
                 for (const adurcField in result.returning[0]) {
-                    const field = model.fields.find(x => x.info.name === adurcField);
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
                     raItem[field.name] = result.returning[0][adurcField];
                 }
                 return raItem;
@@ -89,7 +89,7 @@ export class ReactAdminResolverBuilder {
 
             for (const arg in args) {
                 const field = model.fields.find(x => x.name === arg);
-                item[field.info.name] = args[arg];
+                item[field.info.accessorName] = args[arg];
             }
 
             for (const selection of fieldNode.selectionSet.selections) {
@@ -97,15 +97,15 @@ export class ReactAdminResolverBuilder {
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
-                updateArgs.select[field.info.name] = true;
+                updateArgs.select[field.info.accessorName] = true;
             }
 
-            const result = await adurc[model.adurcClientFieldName].updateMany(updateArgs);
+            const result = await adurc[model.info.accessorName].updateMany(updateArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
                 for (const adurcField in result.returning[0]) {
-                    const field = model.fields.find(x => x.info.name === adurcField);
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
                     raItem[field.name] = result.returning[0][adurcField];
                 }
                 return raItem;
@@ -128,7 +128,7 @@ export class ReactAdminResolverBuilder {
 
             for (const arg in args) {
                 const field = model.fields.find(x => x.name === arg);
-                item[field.info.name] = args[arg];
+                item[field.info.accessorName] = args[arg];
             }
 
             for (const selection of fieldNode.selectionSet.selections) {
@@ -136,15 +136,15 @@ export class ReactAdminResolverBuilder {
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
-                createArgs.select[field.info.name] = true;
+                createArgs.select[field.info.accessorName] = true;
             }
 
-            const result = await adurc[model.adurcClientFieldName].createMany(createArgs);
+            const result = await adurc[model.info.accessorName].createMany(createArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
                 for (const adurcField in result.returning[0]) {
-                    const field = model.fields.find(x => x.info.name === adurcField);
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
                     raItem[field.name] = result.returning[0][adurcField];
                 }
                 return raItem;
@@ -173,7 +173,7 @@ export class ReactAdminResolverBuilder {
                 continue;
             }
             const field = model.fields.find(x => x.name === fieldName);
-            where[field.info.name] = value;
+            where[field.info.accessorName] = value;
         }
     }
 
@@ -198,10 +198,10 @@ export class ReactAdminResolverBuilder {
 
             if ('sortField' in args && 'sortOrder' in args) {
                 const field = model.fields.find(x => x.name === args.sortField);
-                aggregateArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+                aggregateArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            const result = await adurc[model.adurcClientFieldName].aggregate(aggregateArgs);
+            const result = await adurc[model.info.accessorName].aggregate(aggregateArgs);
 
             return result;
         };
@@ -221,19 +221,19 @@ export class ReactAdminResolverBuilder {
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
-                findManyArgs.select[field.info.name] = true;
+                findManyArgs.select[field.info.accessorName] = true;
             }
 
             const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
 
             findManyArgs.where = { ...fieldsPk };
 
-            const result = await adurc[model.adurcClientFieldName].findMany(findManyArgs);
+            const result = await adurc[model.info.accessorName].findMany(findManyArgs);
 
             if (result.length > 0) {
                 const raItem: Record<string, unknown> = {};
                 for (const adurcField in result[0]) {
-                    const field = model.fields.find(x => x.info.name === adurcField);
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
                     raItem[field.name] = result[0][adurcField];
                 }
                 return raItem;
@@ -257,7 +257,7 @@ export class ReactAdminResolverBuilder {
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
-                findManyArgs.select[field.info.name] = true;
+                findManyArgs.select[field.info.accessorName] = true;
             }
 
             if ('filter' in args) {
@@ -272,17 +272,17 @@ export class ReactAdminResolverBuilder {
 
             if ('sortField' in args && 'sortOrder' in args) {
                 const field = model.fields.find(x => x.name === args.sortField);
-                findManyArgs.orderBy = { [field.info.name]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+                findManyArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            const result = await adurc[model.adurcClientFieldName].findMany(findManyArgs);
+            const result = await adurc[model.info.accessorName].findMany(findManyArgs);
 
             const output: Record<string, unknown>[] = [];
 
             for (const adurcItem of result) {
                 const raItem: Record<string, unknown> = {};
                 for (const adurcField in adurcItem) {
-                    const field = model.fields.find(x => x.info.name === adurcField);
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
                     raItem[field.name] = adurcItem[adurcField];
                 }
                 output.push(raItem);
