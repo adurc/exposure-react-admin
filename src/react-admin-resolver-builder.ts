@@ -57,7 +57,7 @@ export class ReactAdminResolverBuilder {
                 deleteArgs.select[field.info.accessorName] = true;
             }
 
-            const result = await adurc[model.info.accessorName].deleteMany(deleteArgs);
+            const result = await adurc.client[model.info.accessorName].deleteMany(deleteArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -100,7 +100,7 @@ export class ReactAdminResolverBuilder {
                 updateArgs.select[field.info.accessorName] = true;
             }
 
-            const result = await adurc[model.info.accessorName].updateMany(updateArgs);
+            const result = await adurc.client[model.info.accessorName].updateMany(updateArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -139,7 +139,7 @@ export class ReactAdminResolverBuilder {
                 createArgs.select[field.info.accessorName] = true;
             }
 
-            const result = await adurc[model.info.accessorName].createMany(createArgs);
+            const result = await adurc.client[model.info.accessorName].createMany(createArgs);
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -201,7 +201,7 @@ export class ReactAdminResolverBuilder {
                 aggregateArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            const result = await adurc[model.info.accessorName].aggregate(aggregateArgs);
+            const result = await adurc.client[model.info.accessorName].aggregate(aggregateArgs);
 
             return result;
         };
@@ -228,7 +228,7 @@ export class ReactAdminResolverBuilder {
 
             findManyArgs.where = { ...fieldsPk };
 
-            const result = await adurc[model.info.accessorName].findMany(findManyArgs);
+            const result = await adurc.client[model.info.accessorName].findMany(findManyArgs);
 
             if (result.length > 0) {
                 const raItem: Record<string, unknown> = {};
@@ -275,7 +275,7 @@ export class ReactAdminResolverBuilder {
                 findManyArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
             }
 
-            const result = await adurc[model.info.accessorName].findMany(findManyArgs);
+            const result = await adurc.client[model.info.accessorName].findMany(findManyArgs);
 
             const output: Record<string, unknown>[] = [];
 
