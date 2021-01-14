@@ -7,6 +7,7 @@ export interface RAField {
     manyFieldName?: string;
     hasDefault: boolean;
     isPk: boolean;
+    isQuery: boolean;
 }
 
 export interface RAModel {
@@ -15,6 +16,7 @@ export interface RAModel {
     pluralTypeName: string;
     fields: RAField[];
     pkFields: RAField[];
+    queryFields: RAField[];
     serializeId?: (item: Record<string, unknown>) => string | number;
     deserializeId?: (value: string | number) => Record<string, unknown>;
 }

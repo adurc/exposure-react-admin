@@ -6,7 +6,7 @@ import { AdurcAggregateArgs } from '@adurc/core/dist/interfaces/client/aggregate
 import { AdurcCreateArgs } from '@adurc/core/dist/interfaces/client/create.args';
 import { AdurcUpdateArgs } from '@adurc/core/dist/interfaces/client/update.args';
 import { AdurcDeleteArgs } from '@adurc/core/dist/interfaces/client/delete.args';
-import { AdurcModelWhere } from '@adurc/core/dist/interfaces/client/where';
+import { AdurcModelWhere, AdurcModelWhereUntyped } from '@adurc/core/dist/interfaces/client/where';
 import { AdurcModelUntyped } from '@adurc/core/dist/interfaces/client/model';
 import { Adurc } from '@adurc/core';
 import { IAdurcLogger } from '@adurc/core/dist/interfaces/logger';
@@ -201,12 +201,30 @@ export class ReactAdminResolverBuilder {
     }
 
     private static buildFilter(model: RAModel, filter: Record<string, unknown>, where: AdurcModelWhere<AdurcModelUntyped>): void {
+        where.AND = [];
         for (const fieldName in filter) {
             const value = filter[fieldName];
-            if (fieldName === 'ids') {
+            if (fieldName === 'q') {
+                if (model.queryFields.length === 0) {
+                    throw new Error(`Model ${model.info.name} can't be filtered by 'q' why it haven't some directive query.`);
+                }
+
+                const filter: AdurcModelWhereUntyped = { OR: [] as never };
+                where.AND.push(filter);
+
+                for (const queryField of model.queryFields) {
+                    filter.OR.push({
+                        [queryField.info.accessorName]: {
+                            contains: value as string,
+                        },
+                    });
+                }
+
+                continue;
+            } else if (fieldName === 'ids') {
                 if (!(value instanceof Array)) throw new Error('Expected array on filter type ids');
                 if (model.deserializeId) {
-                    where.AND = [];
+
                     for (const v of value) {
                         const pksValue = model.deserializeId(v);
                         where.AND.push(pksValue);
