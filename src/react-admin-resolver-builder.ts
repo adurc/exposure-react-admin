@@ -35,7 +35,6 @@ export class ReactAdminResolverBuilder {
             const fieldNode: FieldNode = info.fieldNodes[0];
             this.logger.debug('[exposure-react-admin] invoked delete model: ' + model.info.name, { node: fieldNode, args });
 
-            const item: Record<string, unknown> = {};
             const deleteArgs: AdurcDeleteArgs = {
                 select: {},
                 where: {},
@@ -44,13 +43,16 @@ export class ReactAdminResolverBuilder {
             const fieldsPk = model.deserializeId ? model.deserializeId(args.id) : { id: args.id };
             deleteArgs.where = { ...fieldsPk };
 
-            for (const arg in args) {
-                const field = model.fields.find(x => x.name === arg);
-                item[field.info.accessorName] = args[arg];
-            }
-
+            let selectedPkComputed = false;
             for (const selection of fieldNode.selectionSet.selections) {
                 if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                if (selection.name.value === 'id' && model.deserializeId) {
+                    selectedPkComputed = true;
+                    for (const pk of model.pkFields) {
+                        deleteArgs.select[pk.info.accessorName] = true;
+                    }
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
@@ -61,10 +63,17 @@ export class ReactAdminResolverBuilder {
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
-                for (const adurcField in result.returning[0]) {
-                    const field = model.fields.find(x => x.info.accessorName === adurcField);
-                    raItem[field.name] = result.returning[0][adurcField];
+                const deletedItem = result.returning[0];
+
+                if (selectedPkComputed) {
+                    raItem.id = model.serializeId(deletedItem);
                 }
+
+                for (const adurcField in deletedItem) {
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
+                    raItem[field.name] = deletedItem[adurcField];
+                }
+
                 return raItem;
             }
 
@@ -88,12 +97,21 @@ export class ReactAdminResolverBuilder {
             updateArgs.where = { ...fieldsPk };
 
             for (const arg in args) {
+                if (arg === 'id' || arg in fieldsPk) continue;
                 const field = model.fields.find(x => x.name === arg);
                 item[field.info.accessorName] = args[arg];
             }
 
+            let selectedPkComputed = false;
             for (const selection of fieldNode.selectionSet.selections) {
                 if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                if (selection.name.value === 'id' && model.deserializeId) {
+                    selectedPkComputed = true;
+                    for (const pk of model.pkFields) {
+                        updateArgs.select[pk.info.accessorName] = true;
+                    }
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
@@ -104,9 +122,15 @@ export class ReactAdminResolverBuilder {
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
-                for (const adurcField in result.returning[0]) {
+                const updatedElement = result.returning[0];
+
+                if (selectedPkComputed) {
+                    raItem.id = model.serializeId(updatedElement);
+                }
+
+                for (const adurcField in updatedElement) {
                     const field = model.fields.find(x => x.info.accessorName === adurcField);
-                    raItem[field.name] = result.returning[0][adurcField];
+                    raItem[field.name] = updatedElement[adurcField];
                 }
                 return raItem;
             }
@@ -127,12 +151,27 @@ export class ReactAdminResolverBuilder {
             };
 
             for (const arg in args) {
+                if (arg === 'id' && model.deserializeId) {
+                    const pkFields = model.deserializeId(args.id);
+                    for (const pk in pkFields) {
+                        item[pk] = pkFields[pk];
+                    }
+                    continue;
+                }
                 const field = model.fields.find(x => x.name === arg);
                 item[field.info.accessorName] = args[arg];
             }
 
+            let selectedPkComputed = false;
             for (const selection of fieldNode.selectionSet.selections) {
                 if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                if (selection.name.value === 'id' && model.deserializeId) {
+                    selectedPkComputed = true;
+                    for (const pk of model.pkFields) {
+                        createArgs.select[pk.info.accessorName] = true;
+                    }
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
@@ -143,10 +182,17 @@ export class ReactAdminResolverBuilder {
 
             if (result.returning.length > 0) {
                 const raItem: Record<string, unknown> = {};
-                for (const adurcField in result.returning[0]) {
-                    const field = model.fields.find(x => x.info.accessorName === adurcField);
-                    raItem[field.name] = result.returning[0][adurcField];
+                const createdItem = result.returning[0];
+
+                if (selectedPkComputed) {
+                    raItem.id = model.serializeId(createdItem);
                 }
+
+                for (const adurcField in createdItem) {
+                    const field = model.fields.find(x => x.info.accessorName === adurcField);
+                    raItem[field.name] = createdItem[adurcField];
+                }
+
                 return raItem;
             }
 
@@ -171,7 +217,13 @@ export class ReactAdminResolverBuilder {
                     };
                 }
                 continue;
+            } else if (fieldName === 'id' && model.deserializeId) {
+                where.AND = [];
+                const pksValue = model.deserializeId(value as string | number);
+                where.AND.push(pksValue);
+                continue;
             }
+
             const field = model.fields.find(x => x.name === fieldName);
             where[field.info.accessorName] = value;
         }
@@ -197,8 +249,15 @@ export class ReactAdminResolverBuilder {
             }
 
             if ('sortField' in args && 'sortOrder' in args) {
-                const field = model.fields.find(x => x.name === args.sortField);
-                aggregateArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+                if (args.sortField === 'id' && model.deserializeId) {
+                    aggregateArgs.orderBy = {};
+                    for (const pk of model.pkFields) {
+                        aggregateArgs.orderBy[pk.info.accessorName] = args.sortOrder === 'DESC' ? 'desc' : 'asc';
+                    }
+                } else {
+                    const field = model.fields.find(x => x.name === args.sortField);
+                    aggregateArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+                }
             }
 
             const result = await adurc.client[model.info.accessorName].aggregate(aggregateArgs);
@@ -216,8 +275,16 @@ export class ReactAdminResolverBuilder {
                 select: {},
             };
 
+            let selectedPkComputed = false;
             for (const selection of fieldNode.selectionSet.selections) {
                 if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
+                    continue;
+                }
+                if (selection.name.value === 'id' && model.deserializeId) {
+                    selectedPkComputed = true;
+                    for (const pk of model.pkFields) {
+                        findManyArgs.select[pk.info.accessorName] = true;
+                    }
                     continue;
                 }
                 const field = model.fields.find(x => x.name === selection.name.value);
@@ -232,9 +299,15 @@ export class ReactAdminResolverBuilder {
 
             if (result.length > 0) {
                 const raItem: Record<string, unknown> = {};
-                for (const adurcField in result[0]) {
+                const item = result[0];
+
+                if (selectedPkComputed) {
+                    raItem.id = model.serializeId(item);
+                }
+
+                for (const adurcField in item) {
                     const field = model.fields.find(x => x.info.accessorName === adurcField);
-                    raItem[field.name] = result[0][adurcField];
+                    raItem[field.name] = item[adurcField];
                 }
                 return raItem;
             }
@@ -252,10 +325,20 @@ export class ReactAdminResolverBuilder {
                 select: {},
             };
 
+            let selectedPkComputed = false;
             for (const selection of fieldNode.selectionSet.selections) {
                 if (selection.kind !== 'Field' || ['__typename'].indexOf(selection.name.value) >= 0) {
                     continue;
                 }
+
+                if (selection.name.value === 'id' && model.deserializeId) {
+                    selectedPkComputed = true;
+                    for (const pk of model.pkFields) {
+                        findManyArgs.select[pk.info.accessorName] = true;
+                    }
+                    continue;
+                }
+
                 const field = model.fields.find(x => x.name === selection.name.value);
                 findManyArgs.select[field.info.accessorName] = true;
             }
@@ -281,6 +364,11 @@ export class ReactAdminResolverBuilder {
 
             for (const adurcItem of result) {
                 const raItem: Record<string, unknown> = {};
+
+                if (selectedPkComputed) {
+                    raItem.id = model.serializeId(adurcItem);
+                }
+
                 for (const adurcField in adurcItem) {
                     const field = model.fields.find(x => x.info.accessorName === adurcField);
                     raItem[field.name] = adurcItem[adurcField];
