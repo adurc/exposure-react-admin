@@ -140,10 +140,6 @@ export class GraphqlDocumentBuilder {
                 continue;
             }
 
-            if (field.isPk && model.serializeId && field.name !== 'id') {
-                continue;
-            }
-
             if (!options.includePk && field.isPk && (!options.includePkWithoutDefault || field.hasDefault)) {
                 continue;
             } else if (!options.includeNonPk && !field.isPk) {
@@ -159,7 +155,12 @@ export class GraphqlDocumentBuilder {
                 name: { kind: 'Name', value: this.transformDataServerTypeIntoGraphQLType(field.info.type as string) }
             };
 
-            if (field.info.nonNull && !field.hasDefault) {
+            if (field.isPk && !model.serializeId && !field.hasDefault) {
+                fieldType = {
+                    kind: 'NonNullType',
+                    type: fieldType,
+                };
+            } else if (!field.isPk && !model.serializeId && field.info.nonNull && !field.hasDefault) {
                 fieldType = {
                     kind: 'NonNullType',
                     type: fieldType,
