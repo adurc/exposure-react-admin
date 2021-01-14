@@ -354,8 +354,15 @@ export class ReactAdminResolverBuilder {
             }
 
             if ('sortField' in args && 'sortOrder' in args) {
-                const field = model.fields.find(x => x.name === args.sortField);
-                findManyArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+                if (args.sortField === 'id' && model.deserializeId) {
+                    findManyArgs.orderBy = {};
+                    for (const pk of model.pkFields) {
+                        findManyArgs.orderBy[pk.info.accessorName] = args.sortOrder === 'DESC' ? 'desc' : 'asc';
+                    }
+                } else {
+                    const field = model.fields.find(x => x.name === args.sortField);
+                    findManyArgs.orderBy = { [field.info.accessorName]: args.sortOrder === 'DESC' ? 'desc' : 'asc' };
+                }
             }
 
             const result = await adurc.client[model.info.accessorName].findMany(findManyArgs);
