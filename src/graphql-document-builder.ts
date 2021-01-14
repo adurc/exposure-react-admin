@@ -132,7 +132,7 @@ export class GraphqlDocumentBuilder {
         };
     }
 
-    private static buildMutationArguments(model: RAModel, options: { includePk: boolean, includeNonPk: boolean }) {
+    private static buildMutationArguments(model: RAModel, options: { includePk: boolean, includePkWithoutDefault: boolean, includeNonPk: boolean }) {
         const args: InputValueDefinitionNode[] = [];
 
         for (const field of model.fields) {
@@ -140,10 +140,9 @@ export class GraphqlDocumentBuilder {
                 continue;
             }
 
-            const isPK = field.info.directives.findIndex(x => x.name === 'pk') >= 0;
-            if (!options.includePk && isPK) {
+            if (!options.includePk && field.isPk && (!options.includePkWithoutDefault || field.hasDefault)) {
                 continue;
-            } else if (!options.includeNonPk && !isPK) {
+            } else if (!options.includeNonPk && !field.isPk) {
                 continue;
             }
 
@@ -180,7 +179,7 @@ export class GraphqlDocumentBuilder {
         return {
             kind: 'FieldDefinition',
             name: { kind: 'Name', value: `create${model.typeName}` },
-            arguments: this.buildMutationArguments(model, { includePk: false, includeNonPk: true }),
+            arguments: this.buildMutationArguments(model, { includePk: false, includePkWithoutDefault: true, includeNonPk: true }),
             type: {
                 kind: 'NonNullType',
                 type: {
@@ -195,7 +194,7 @@ export class GraphqlDocumentBuilder {
         return {
             kind: 'FieldDefinition',
             name: { kind: 'Name', value: `update${model.typeName}` },
-            arguments: this.buildMutationArguments(model, { includePk: true, includeNonPk: true }),
+            arguments: this.buildMutationArguments(model, { includePk: true, includePkWithoutDefault: true, includeNonPk: true }),
             type: {
                 kind: 'NonNullType',
                 type: {
@@ -210,14 +209,13 @@ export class GraphqlDocumentBuilder {
         return {
             kind: 'FieldDefinition',
             name: { kind: 'Name', value: `delete${model.typeName}` },
-            arguments: this.buildMutationArguments(model, { includePk: true, includeNonPk: false }),
+            arguments: this.buildMutationArguments(model, { includePk: true, includePkWithoutDefault: true, includeNonPk: false }),
             type: {
                 kind: 'NamedType',
                 name: { kind: 'Name', value: model.typeName },
             },
         };
     }
-
 
     private static buildMutationTypeRoot(models: RAModel[]): DefinitionNode {
         const mutations: FieldDefinitionNode[] = [];
