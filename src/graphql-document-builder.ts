@@ -140,6 +140,10 @@ export class GraphqlDocumentBuilder {
                 continue;
             }
 
+            if (field.isPk && model.serializeId && field.name !== 'id') {
+                continue;
+            }
+
             if (!options.includePk && field.isPk && (!options.includePkWithoutDefault || field.hasDefault)) {
                 continue;
             } else if (!options.includeNonPk && !field.isPk) {
