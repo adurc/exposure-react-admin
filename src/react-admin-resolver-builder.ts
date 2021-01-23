@@ -10,6 +10,8 @@ import { AdurcModelWhere, AdurcModelWhereUntyped } from '@adurc/core/dist/interf
 import { AdurcModelUntyped } from '@adurc/core/dist/interfaces/client/model';
 import { Adurc } from '@adurc/core';
 import { IAdurcLogger } from '@adurc/core/dist/interfaces/logger';
+import { DateGraphQLScalarType } from './date-scalar';
+import { BufferGraphQLScalarType } from './buffer-scalar';
 
 export class ReactAdminResolverBuilder {
 
@@ -17,6 +19,9 @@ export class ReactAdminResolverBuilder {
 
     static build(adurc: Adurc, models: RAModel[]): IResolvers {
         const resolvers: IResolvers = { Query: {}, Mutation: {} };
+
+        resolvers.Date = new DateGraphQLScalarType();
+        resolvers.Buffer = new BufferGraphQLScalarType();
 
         for (const model of models) {
             resolvers.Query[model.typeName] = this.buildFindOneResolver(adurc, model);
